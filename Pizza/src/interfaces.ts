@@ -1,17 +1,11 @@
 export interface IEntity {
-    readonly id: string 
-    readonly createdAt: Date
-    readonly updatedAt: Date
+  readonly id: string
 }
 
 export interface ICostCalculable {
-    calculateCost(): number
-}
-
-export interface ISerializable {
-    toJSON(): Record<string, unknown>
+  calculateCost(): number
 }
 
 export interface IFilterable {
-    matchesFilter(query: string): boolean
+  matchesFilter(query: string): boolean
 }
