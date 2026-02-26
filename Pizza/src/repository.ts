@@ -1,4 +1,4 @@
-import type { IFilterable, ICostCalculable } from './interfaces'
+import type { IFilterable } from './interfaces'
 import { Entity } from './models'
 
 export class Repository<T extends Entity> {
@@ -13,10 +13,6 @@ export class Repository<T extends Entity> {
   }
 
   add(item: T): void {
-    this.items.set(item.id, item)
-  }
-
-  update(item: T): void {
     this.items.set(item.id, item)
   }
 
@@ -69,33 +65,3 @@ sum(selector: (item: T) => number): number {
   }
 }
 
-export class CostSplitter<T extends ICostCalculable> {
-  private items: T[]
-
-  constructor(items: T[]) {
-    this.items = items
-  }
-
-  getTotalCost(): number {
-    let total = 0
-    for (const item of this.items) {
-      total += item.calculateCost()
-    }
-    return total
-  }
-
-  split(guestCount: number): number[] {
-    if (guestCount <= 0) return []
-    const total = this.getTotalCost()
-    const totalKopecks = Math.round(total * 100)
-    const perGuest = Math.floor(totalKopecks / guestCount)
-    const remainder = totalKopecks - perGuest * guestCount
-
-    const result: number[] = []
-    for (let i = 0; i < guestCount; i++) {
-      const kopecks = i === 0 ? perGuest + remainder : perGuest
-      result.push(kopecks / 100)
-    }
-    return result
-  }
-}

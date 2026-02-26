@@ -98,10 +98,6 @@ export class CrustService {
 
   delete(id: string): void { this.repo.delete(id) }
 
-  getCompatible(pizzaId: string): Crust[] {
-    return this.repo.getAll().filter(c => c.isCompatibleWith(pizzaId))
-  }
-
   search(query: string): Crust[] {
     return this.filter.apply(this.repo.getAll(), query)
   }
@@ -114,8 +110,8 @@ export class OrderService {
 
   getAll(): Order[] { return this.repo.getAll() }
 
-  create(items: OrderItem[], comment: string, guestCount: number, deferredTime?: Date): Order {
-    const order = new Order(this.nextNumber++, items, comment, guestCount, deferredTime)
+  create(items: OrderItem[], comment: string, guestCount: number, guestAssignments: number[][], deferredTime?: Date): Order {
+    const order = new Order(this.nextNumber++, items, comment, guestCount, guestAssignments, deferredTime)
     this.repo.add(order)
     return order
   }

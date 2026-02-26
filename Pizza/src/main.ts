@@ -1,6 +1,6 @@
 import './style.css'
 import { IngredientService, PizzaBaseService, PizzaService, CrustService, OrderService } from './services'
-import { CostSplitter } from './repository'
+import { Collection } from './repository'
 import { CrustListMode, SavedPizzaItem, CustomPizzaItem, CombinedPizzaItem, SlicedPizzaItem, PizzaSlice, PizzaSize } from './models'
 import type { OrderItem } from './models'
 import { createPizzaCircle } from './pizza-circle'
@@ -52,7 +52,8 @@ function renderIngredients() {
     <div class="add-form">
       <input id="ing-name" placeholder="Название" />
       <input id="ing-cost" type="number" placeholder="Стоимость" />
-      <button id="ing-add">Добавить</button>
+      <button id="ing-submit">Добавить</button>
+      <button id="ing-cancel" style="display:none">Отмена</button>
     </div>
     <input id="ing-search" placeholder="Поиск..." />
     <table id="ing-table">
@@ -63,16 +64,37 @@ function renderIngredients() {
   const nameInput = document.getElementById('ing-name') as HTMLInputElement
   const costInput = document.getElementById('ing-cost') as HTMLInputElement
   const searchInput = document.getElementById('ing-search') as HTMLInputElement
+  const submitBtn = document.getElementById('ing-submit') as HTMLButtonElement
+  const cancelBtn = document.getElementById('ing-cancel') as HTMLButtonElement
+  let editingId: string | null = null
 
-  document.getElementById('ing-add')!.addEventListener('click', () => {
+  submitBtn.addEventListener('click', () => {
     const name = nameInput.value.trim()
     const cost = Number(costInput.value)
     if (!name || cost < 0) return alert('Введите название и стоимость')
-    ingredientService.add(name, cost)
+    if (editingId) {
+      ingredientService.update(editingId, name, cost)
+      stopEditing()
+    } else {
+      ingredientService.add(name, cost)
+    }
     nameInput.value = ''
     costInput.value = ''
     updateTable()
   })
+
+  cancelBtn.addEventListener('click', () => {
+    stopEditing()
+    nameInput.value = ''
+    costInput.value = ''
+  })
+
+  function stopEditing() {
+    editingId = null
+    submitBtn.textContent = 'Добавить'
+    cancelBtn.style.display = 'none'
+  }
+
   searchInput.addEventListener('input', () => updateTable())
 
   function updateTable() {
@@ -85,10 +107,25 @@ function renderIngredients() {
       tr.innerHTML = `
         <td>${ing.name}</td>
         <td>${ing.cost}</td>
-        <td><button data-id="${ing.id}" class="delete-btn">Удалить</button></td>
+        <td>
+          <button data-id="${ing.id}" class="edit-btn">Ред.</button>
+          <button data-id="${ing.id}" class="delete-btn">Удалить</button>
+        </td>
       `
       tbody.appendChild(tr)
     }
+    tbody.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = (btn as HTMLElement).dataset.id!
+        const ing = ingredientService.getById(id)
+        if (!ing) return
+        nameInput.value = ing.name
+        costInput.value = String(ing.cost)
+        editingId = id
+        submitBtn.textContent = 'Сохранить'
+        cancelBtn.style.display = ''
+      })
+    })
     tbody.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         ingredientService.delete((btn as HTMLElement).dataset.id!)
@@ -337,6 +374,7 @@ function renderNewOrder() {
 
       <div id="order-saved" class="order-section">
         <select id="order-pizza"><option value="">-- Выберите пиццу --</option></select>
+        <div id="order-doubled"><strong>Удвоить ингредиенты:</strong></div>
       </div>
 
       <div id="order-custom" class="order-section" style="display:none">
@@ -377,6 +415,7 @@ function renderNewOrder() {
   `
 
   const orderItems: OrderItem[] = []
+  const itemGuestMap: number[][] = []
   const itemsContainer = document.getElementById('order-items')!
 
   const pizzaSelect = document.getElementById('order-pizza') as HTMLSelectElement
@@ -405,6 +444,18 @@ function renderNewOrder() {
     opt.textContent = `${crust.name} (${crust.calculateCost()}₽)`
     crustSelect.appendChild(opt)
   }
+
+  const doubledContainer = document.getElementById('order-doubled')!
+  pizzaSelect.addEventListener('change', () => {
+    doubledContainer.innerHTML = '<strong>Удвоить ингредиенты:</strong>'
+    const pizza = pizzaService.getById(pizzaSelect.value)
+    if (!pizza) return
+    for (const ing of pizza.ingredients) {
+      const label = document.createElement('label')
+      label.innerHTML = `<input type="checkbox" value="${ing.id}" /> ${ing.name} `
+      doubledContainer.appendChild(label)
+    }
+  })
 
   const customIngs = document.getElementById('order-custom-ings')!
   for (const ing of ingredientService.getAll()) {
@@ -459,7 +510,10 @@ function renderNewOrder() {
         const pizzaId = pizzaSelect.value
         if (!pizzaId) return alert('Выберите пиццу')
         const pizza = pizzaService.getById(pizzaId)!
-        item = new SavedPizzaItem(pizza, size, base, crust)
+        const doubledIds = Array.from(doubledContainer.querySelectorAll('input:checked')).map(
+          cb => (cb as HTMLInputElement).value
+        )
+        item = new SavedPizzaItem(pizza, size, base, crust, doubledIds)
         break
       }
       case 'custom': {
@@ -487,10 +541,15 @@ function renderNewOrder() {
     }
 
     orderItems.push(item)
+    const gc = Number((document.getElementById('order-guests') as HTMLInputElement).value) || 1
+    const allGuests: number[] = []
+    for (let g = 0; g < gc; g++) allGuests.push(g)
+    itemGuestMap.push(allGuests)
     updateItemsList()
   })
 
   function updateItemsList() {
+    const guestCount = Number((document.getElementById('order-guests') as HTMLInputElement).value) || 1
     itemsContainer.innerHTML = '<h3>Пиццы в заказе:</h3>'
     if (orderItems.length === 0) {
       itemsContainer.innerHTML += '<p>Пусто</p>'
@@ -502,28 +561,74 @@ function renderNewOrder() {
       const cost = item.calculateCost()
       total += cost
       const div = document.createElement('div')
-      div.innerHTML = `${i + 1}. ${item.describe()} (${item.size}) — ${cost}₽ <button data-idx="${i}" class="remove-item">✕</button>`
+      div.className = 'order-item-row'
+
+      let guestHtml = ''
+      if (guestCount > 1) {
+        const checks = []
+        for (let g = 0; g < guestCount; g++) {
+          const checked = (itemGuestMap[i] ?? []).includes(g) ? 'checked' : ''
+          checks.push(`<label><input type="checkbox" data-item="${i}" data-guest="${g}" class="guest-check" ${checked} /> Г${g + 1}</label>`)
+        }
+        guestHtml = ` <span class="guest-assigns">${checks.join(' ')}</span>`
+      }
+
+      div.innerHTML = `${i + 1}. ${item.describe()} (${item.size}) — ${cost}₽${guestHtml} <button data-idx="${i}" class="remove-item">✕</button>`
       itemsContainer.appendChild(div)
     }
     const totalDiv = document.createElement('div')
     totalDiv.innerHTML = `<strong>Итого: ${total}₽</strong>`
     itemsContainer.appendChild(totalDiv)
 
+    itemsContainer.querySelectorAll('.guest-check').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const el = cb as HTMLInputElement
+        const itemIdx = Number(el.dataset.item)
+        const guestIdx = Number(el.dataset.guest)
+        if (!itemGuestMap[itemIdx]) itemGuestMap[itemIdx] = []
+        if (el.checked) {
+          if (!itemGuestMap[itemIdx].includes(guestIdx)) itemGuestMap[itemIdx].push(guestIdx)
+        } else {
+          itemGuestMap[itemIdx] = itemGuestMap[itemIdx].filter(g => g !== guestIdx)
+          if (itemGuestMap[itemIdx].length === 0) {
+            el.checked = true
+            itemGuestMap[itemIdx].push(guestIdx)
+            alert('Пицца должна принадлежать хотя бы одному гостю')
+          }
+        }
+      })
+    })
+
     itemsContainer.querySelectorAll('.remove-item').forEach(btn => {
       btn.addEventListener('click', () => {
-        orderItems.splice(Number((btn as HTMLElement).dataset.idx), 1)
+        const idx = Number((btn as HTMLElement).dataset.idx)
+        orderItems.splice(idx, 1)
+        itemGuestMap.splice(idx, 1)
         updateItemsList()
       })
     })
   }
   updateItemsList()
 
+  document.getElementById('order-guests')!.addEventListener('change', () => {
+    const gc = Number((document.getElementById('order-guests') as HTMLInputElement).value) || 1
+    for (let i = 0; i < itemGuestMap.length; i++) {
+      itemGuestMap[i] = itemGuestMap[i].filter(g => g < gc)
+      if (itemGuestMap[i].length === 0) {
+        const all: number[] = []
+        for (let g = 0; g < gc; g++) all.push(g)
+        itemGuestMap[i] = all
+      }
+    }
+    updateItemsList()
+  })
+
   document.getElementById('order-submit')!.addEventListener('click', () => {
     if (orderItems.length === 0) return alert('Добавьте хотя бы одну пиццу')
     const comment = (document.getElementById('order-comment') as HTMLInputElement).value
     const guestCount = Number((document.getElementById('order-guests') as HTMLInputElement).value) || 1
     const deferred = deferredCheck.checked ? new Date(deferredTime.value) : undefined
-    orderService.create([...orderItems], comment, guestCount, deferred)
+    orderService.create([...orderItems], comment, guestCount, [...itemGuestMap], deferred)
     alert('Заказ оформлен!')
     openPage('orders')
   })
@@ -540,7 +645,8 @@ function renderOrders() {
 
   function updateList() {
     const query = searchInput.value
-    const orders = query ? orderService.search(query) : orderService.getAll()
+    const raw = query ? orderService.search(query) : orderService.getAll()
+    const orders = new Collection(raw).orderBy(o => o.totalCost).toArray()
     const container = document.getElementById('orders-list')!
     container.innerHTML = ''
 
@@ -556,9 +662,8 @@ function renderOrders() {
 
       let guestSplitHtml = ''
       if (order.guestCount > 1) {
-        const splitter = new CostSplitter(order.items)
-        const amounts = splitter.split(order.guestCount)
-        const lines = amounts.map((amount, i) => `Гость ${i + 1}: ${amount}₽`).join('<br/>')
+        const guestCosts = order.getGuestCosts()
+        const lines = guestCosts.map((amount, i) => `Гость ${i + 1}: ${amount}₽`).join('<br/>')
         guestSplitHtml = `<p><strong>Разделение на ${order.guestCount} гостей:</strong><br/>${lines}</p>`
       }
 

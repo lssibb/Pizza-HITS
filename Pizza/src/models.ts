@@ -121,14 +121,6 @@ export class Pizza extends Entity implements ICostCalculable, IFilterable {
   get ingredients(): Ingredient[] { return [...this._ingredients] }
   get base(): PizzaBase { return this._base }
 
-  addIngredient(ingredient: Ingredient): void {
-    this._ingredients.push(ingredient)
-  }
-
-  removeIngredient(id: string): void {
-    this._ingredients = this._ingredients.filter(i => i.id !== id)
-  }
-
   calculateCost(): number {
     const ingCost = this._ingredients.reduce((sum, i) => sum + i.cost, 0)
     return ingCost + this._base.calculateCost()
@@ -325,13 +317,15 @@ export class Order extends Entity implements IFilterable {
   private _orderTime: Date
   private _deferredTime: Date | null
   private _guestCount: number
+  private _guestAssignments: number[][]
 
-  constructor(number: number, items: OrderItem[], comment: string, guestCount: number, deferredTime?: Date, id?: string) {
+  constructor(number: number, items: OrderItem[], comment: string, guestCount: number, guestAssignments: number[][], deferredTime?: Date, id?: string) {
     super(id)
     this._number = number
     this._items = [...items]
     this._comment = comment
     this._guestCount = guestCount
+    this._guestAssignments = guestAssignments.map(a => [...a])
     this._orderTime = new Date()
     this._deferredTime = deferredTime ?? null
   }
@@ -340,11 +334,31 @@ export class Order extends Entity implements IFilterable {
   get items(): OrderItem[] { return [...this._items] }
   get comment(): string { return this._comment }
   get guestCount(): number { return this._guestCount }
+  get guestAssignments(): number[][] { return this._guestAssignments.map(a => [...a]) }
   get orderTime(): Date { return this._orderTime }
   get deferredTime(): Date | null { return this._deferredTime }
 
   get totalCost(): number {
     return this._items.reduce((sum, item) => sum + item.calculateCost(), 0)
+  }
+
+  getGuestCosts(): number[] {
+    const costs = new Array(this._guestCount).fill(0)
+    for (let i = 0; i < this._items.length; i++) {
+      const itemCost = this._items[i].calculateCost()
+      const guests = this._guestAssignments[i] ?? [0]
+      const share = itemCost / guests.length
+      for (const g of guests) {
+        costs[g] += share
+      }
+    }
+    const totalReal = this.totalCost
+    const rounded = costs.map(c => Math.floor(c * 100) / 100)
+    const diff = Math.round((totalReal - rounded.reduce((s, c) => s + c, 0)) * 100)
+    if (diff > 0 && rounded.length > 0) {
+      rounded[0] = Math.round((rounded[0] + diff / 100) * 100) / 100
+    }
+    return rounded
   }
 
   matchesFilter(query: string): boolean {

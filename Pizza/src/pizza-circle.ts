@@ -138,16 +138,7 @@ export function createPizzaCircle(
   btnApply.textContent = 'Назначить на выбранные куски'
   btnApply.addEventListener('click', () => {
     if (selectedSlices.size === 0) return alert('Выберите хотя бы один кусок')
-
-    const checkedIds = Array.from(ingPanel.querySelectorAll('input:checked')).map(
-      cb => (cb as HTMLInputElement).value
-    )
-    const selectedIngs = checkedIds.map(id => allIngredients.find(i => i.id === id)!).filter(Boolean)
-
-    for (const idx of selectedSlices) {
-      slices[idx].ingredients = selectedIngs
-    }
-
+    applyIngredients(selectedSlices)
     selectedSlices.clear()
     drawCircle()
     updateInfo()
@@ -155,6 +146,38 @@ export function createPizzaCircle(
   })
 
   ingPanel.appendChild(btnApply)
+
+  const rangeDiv = document.createElement('div')
+  rangeDiv.innerHTML = `
+    <strong>Назначить по диапазону:</strong>
+    <label>От: <input type="number" id="range-from" min="1" max="${sliceCount}" value="1" style="width:50px" /></label>
+    <label>До: <input type="number" id="range-to" min="1" max="${sliceCount}" value="${sliceCount}" style="width:50px" /></label>
+  `
+  const btnRange = document.createElement('button')
+  btnRange.textContent = 'Назначить на диапазон'
+  btnRange.addEventListener('click', () => {
+    const from = Number((rangeDiv.querySelector('#range-from') as HTMLInputElement).value)
+    const to = Number((rangeDiv.querySelector('#range-to') as HTMLInputElement).value)
+    if (from < 1 || to > sliceCount || from > to) return alert(`Введите диапазон от 1 до ${sliceCount}`)
+    const rangeSet = new Set<number>()
+    for (let i = from - 1; i < to; i++) rangeSet.add(i)
+    applyIngredients(rangeSet)
+    drawCircle()
+    updateInfo()
+    onUpdate(slices)
+  })
+  rangeDiv.appendChild(btnRange)
+  ingPanel.appendChild(rangeDiv)
+
+  function applyIngredients(indices: Set<number>) {
+    const checkedIds = Array.from(ingPanel.querySelectorAll('.slice-ingredients > label input:checked')).map(
+      cb => (cb as HTMLInputElement).value
+    )
+    const selectedIngs = checkedIds.map(id => allIngredients.find(i => i.id === id)!).filter(Boolean)
+    for (const idx of indices) {
+      slices[idx].ingredients = selectedIngs
+    }
+  }
   controls.appendChild(ingPanel)
 
   const infoDiv = document.createElement('div')
