@@ -280,6 +280,47 @@ export class CombinedPizzaItem extends OrderItem {
   describe(): string { return `${this._halfA.name} / ${this._halfB.name}` }
 }
 
+export class PizzaSlice {
+  private _position: number
+  private _ingredients: Ingredient[]
+
+  constructor(position: number, ingredients: Ingredient[]) {
+    this._position = position
+    this._ingredients = [...ingredients]
+  }
+
+  get position(): number { return this._position }
+  get ingredients(): Ingredient[] { return [...this._ingredients] }
+
+  set ingredients(value: Ingredient[]) { this._ingredients = [...value] }
+
+  calculateCost(): number {
+    return this._ingredients.reduce((sum, i) => sum + i.cost, 0)
+  }
+}
+
+export class SlicedPizzaItem extends OrderItem {
+  private _slices: PizzaSlice[]
+
+  constructor(slices: PizzaSlice[], size: PizzaSize, base: PizzaBase, crust?: Crust) {
+    super(size, base, crust)
+    this._slices = slices
+  }
+
+  get slices(): PizzaSlice[] { return this._slices }
+
+  calculateCost(): number {
+    let totalIngCost = 0
+    for (const slice of this._slices) {
+      totalIngCost += slice.calculateCost()
+    }
+    const crustCost = this._crust?.calculateCost() ?? 0
+    return totalIngCost + this._base.calculateCost() + crustCost
+  }
+
+  describe(): string { return 'Покусочная пицца' }
+}
+
 export class Order extends Entity implements IFilterable {
   private _number: number
   private _items: OrderItem[]

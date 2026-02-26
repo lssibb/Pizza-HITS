@@ -1,5 +1,7 @@
 import { Repository, FilterEngine } from './repository'
-import { Ingredient, PizzaBase, Pizza, BaseType, createPizzaBase } from './models'
+import { Ingredient, PizzaBase, Pizza, BaseType, createPizzaBase, Crust, CrustListMode, Order } from './models'
+import type { OrderItem } from './models'
+
 
 export class IngredientService {
   private repo = new Repository<Ingredient>()
@@ -77,6 +79,50 @@ export class PizzaService {
   delete(id: string): void { this.repo.delete(id) }
 
   search(query: string): Pizza[] {
+    return this.filter.apply(this.repo.getAll(), query)
+  }
+}
+
+export class CrustService {
+  private repo = new Repository<Crust>()
+  private filter = new FilterEngine<Crust>()
+
+  getAll(): Crust[] { return this.repo.getAll() }
+  getById(id: string) { return this.repo.getById(id) }
+
+  add(name: string, ingredients: Ingredient[], listMode: CrustListMode, pizzaIds: string[]): Crust {
+    const crust = new Crust(name, ingredients, listMode, pizzaIds)
+    this.repo.add(crust)
+    return crust
+  }
+
+  delete(id: string): void { this.repo.delete(id) }
+
+  getCompatible(pizzaId: string): Crust[] {
+    return this.repo.getAll().filter(c => c.isCompatibleWith(pizzaId))
+  }
+
+  search(query: string): Crust[] {
+    return this.filter.apply(this.repo.getAll(), query)
+  }
+}
+
+export class OrderService {
+  private repo = new Repository<Order>()
+  private filter = new FilterEngine<Order>()
+  private nextNumber = 1
+
+  getAll(): Order[] { return this.repo.getAll() }
+
+  create(items: OrderItem[], comment: string, deferredTime?: Date): Order {
+    const order = new Order(this.nextNumber++, items, comment, deferredTime)
+    this.repo.add(order)
+    return order
+  }
+
+  delete(id: string): void { this.repo.delete(id) }
+
+  search(query: string): Order[] {
     return this.filter.apply(this.repo.getAll(), query)
   }
 }
