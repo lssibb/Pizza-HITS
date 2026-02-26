@@ -63,9 +63,14 @@ export class Collection<T> {
     return this.items[0]
   }
 
-  sum(selector: (item: T) => number): number {
-    return this.items.reduce((s, i) => s + selector(i), 0)
+sum(selector: (item: T) => number): number {
+  let result = 0
+  for (const item of this.items) {
+    result += selector(item)
   }
+  return result
+}
+
 
   toArray(): T[] {
     return [...this.items]
