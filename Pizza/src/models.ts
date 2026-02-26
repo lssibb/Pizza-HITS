@@ -106,7 +106,6 @@ export function createPizzaBase(type: BaseType, name: string, cost: number, id?:
   }
 }
 
-// ===== ПИЦЦА =====
 export class Pizza extends Entity implements ICostCalculable, IFilterable {
   private _name: string
   private _ingredients: Ingredient[]
@@ -142,5 +141,174 @@ export class Pizza extends Entity implements ICostCalculable, IFilterable {
     const q = query.toLowerCase()
     return this._name.toLowerCase().includes(q)
       || this._ingredients.some(i => i.name.toLowerCase().includes(q))
+  }
+}
+
+export const CrustListMode = {
+  Whitelist: 'whitelist',
+  Blacklist: 'blacklist',
+} as const
+
+export type CrustListMode = typeof CrustListMode[keyof typeof CrustListMode]
+
+export class Crust extends Entity implements ICostCalculable, IFilterable {
+  private _name: string
+  private _ingredients: Ingredient[]
+  private _listMode: CrustListMode
+  private _pizzaIds: string[]  
+
+  constructor(name: string, ingredients: Ingredient[], listMode: CrustListMode, pizzaIds: string[], id?: string) {
+    super(id)
+    this._name = name
+    this._ingredients = [...ingredients]
+    this._listMode = listMode
+    this._pizzaIds = [...pizzaIds]
+  }
+
+  get name(): string { return this._name }
+  get ingredients(): Ingredient[] { return [...this._ingredients] }
+  get listMode(): CrustListMode { return this._listMode }
+  get pizzaIds(): string[] { return [...this._pizzaIds] }
+
+  isCompatibleWith(pizzaId: string): boolean {
+    const isInList = this._pizzaIds.includes(pizzaId)
+    return this._listMode === CrustListMode.Whitelist ? isInList : !isInList
+  }
+
+  calculateCost(): number {
+    return this._ingredients.reduce((sum, i) => sum + i.cost, 0)
+  }
+
+  matchesFilter(query: string): boolean {
+    return this._name.toLowerCase().includes(query.toLowerCase())
+  }
+}
+
+export const PizzaSize = {
+  Small: 'small',
+  Medium: 'medium',
+  Large: 'large',
+} as const
+
+export type PizzaSize = typeof PizzaSize[keyof typeof PizzaSize]
+
+export const SLICE_COUNTS: Record<PizzaSize, number> = {
+  small: 6,
+  medium: 8,
+  large: 12,
+}
+
+export abstract class OrderItem extends Entity implements ICostCalculable {
+  protected _size: PizzaSize
+  protected _base: PizzaBase
+  protected _crust: Crust | null
+
+  constructor(size: PizzaSize, base: PizzaBase, crust?: Crust, id?: string) {
+    super(id)
+    this._size = size
+    this._base = base
+    this._crust = crust ?? null
+  }
+
+  get size(): PizzaSize { return this._size }
+  get base(): PizzaBase { return this._base }
+  get crust(): Crust | null { return this._crust }
+
+  abstract calculateCost(): number
+  abstract describe(): string
+}
+
+export class SavedPizzaItem extends OrderItem {
+  private _pizza: Pizza
+  private _doubledIngredientIds: Set<string>
+
+  constructor(pizza: Pizza, size: PizzaSize, base: PizzaBase, crust?: Crust, doubledIds?: string[]) {
+    super(size, base, crust)
+    this._pizza = pizza
+    this._doubledIngredientIds = new Set(doubledIds ?? [])
+  }
+
+  get pizza(): Pizza { return this._pizza }
+
+  calculateCost(): number {
+    let cost = this._pizza.calculateCost()
+    for (const ing of this._pizza.ingredients) {
+      if (this._doubledIngredientIds.has(ing.id)) {
+        cost += ing.cost
+      }
+    }
+    const crustCost = this._crust?.calculateCost() ?? 0
+    return cost + crustCost
+  }
+
+  describe(): string { return this._pizza.name }
+}
+
+export class CustomPizzaItem extends OrderItem {
+  private _ingredients: Ingredient[]
+
+  constructor(ingredients: Ingredient[], size: PizzaSize, base: PizzaBase, crust?: Crust) {
+    super(size, base, crust)
+    this._ingredients = [...ingredients]
+  }
+
+  calculateCost(): number {
+    const ingCost = this._ingredients.reduce((sum, i) => sum + i.cost, 0)
+    const crustCost = this._crust?.calculateCost() ?? 0
+    return ingCost + this._base.calculateCost() + crustCost
+  }
+
+  describe(): string { return 'Кастомная пицца' }
+}
+
+export class CombinedPizzaItem extends OrderItem {
+  private _halfA: Pizza
+  private _halfB: Pizza
+
+  constructor(halfA: Pizza, halfB: Pizza, size: PizzaSize, base: PizzaBase, crust?: Crust) {
+    super(size, base, crust)
+    this._halfA = halfA
+    this._halfB = halfB
+  }
+
+  calculateCost(): number {
+    const halfCost = (this._halfA.calculateCost() + this._halfB.calculateCost()) / 2
+    const crustCost = this._crust?.calculateCost() ?? 0
+    return halfCost + crustCost
+  }
+
+  describe(): string { return `${this._halfA.name} / ${this._halfB.name}` }
+}
+
+export class Order extends Entity implements IFilterable {
+  private _number: number
+  private _items: OrderItem[]
+  private _comment: string
+  private _orderTime: Date
+  private _deferredTime: Date | null
+
+  constructor(number: number, items: OrderItem[], comment: string, deferredTime?: Date, id?: string) {
+    super(id)
+    this._number = number
+    this._items = [...items]
+    this._comment = comment
+    this._orderTime = new Date()
+    this._deferredTime = deferredTime ?? null
+  }
+
+  get number(): number { return this._number }
+  get items(): OrderItem[] { return [...this._items] }
+  get comment(): string { return this._comment }
+  get orderTime(): Date { return this._orderTime }
+  get deferredTime(): Date | null { return this._deferredTime }
+
+  get totalCost(): number {
+    return this._items.reduce((sum, item) => sum + item.calculateCost(), 0)
+  }
+
+  matchesFilter(query: string): boolean {
+    const q = query.toLowerCase()
+    return this._comment.toLowerCase().includes(q)
+      || this._items.some(item => item.describe().toLowerCase().includes(q))
   }
 }
