@@ -25,9 +25,6 @@ export class Repository<T extends Entity> {
   }
 }
 
-// ===== ФИЛЬТР =====
-// Универсальный фильтр для любого типа, который реализует IFilterable
-
 export class FilterEngine<T extends IFilterable> {
   apply(items: T[], query: string): T[] {
     if (!query) return items
@@ -35,16 +32,12 @@ export class FilterEngine<T extends IFilterable> {
   }
 }
 
-// ===== КОЛЛЕКЦИЯ (LINQ-подобная) =====
-// Обёртка над массивом с удобными методами сортировки и выборки
-
 export class Collection<T> {
   private items: T[]
 
   constructor(items: T[]) {
     this.items = items
   }
-
 
   where(predicate: (item: T) => boolean): Collection<T> {
     return new Collection(this.items.filter(predicate))
@@ -71,15 +64,10 @@ sum(selector: (item: T) => number): number {
   return result
 }
 
-
   toArray(): T[] {
     return [...this.items]
   }
 }
-
-// ===== РАЗДЕЛЕНИЕ СТОИМОСТИ =====
-// Дженерик-класс: делит стоимость набора элементов между N гостями
-// Алгоритм: floor(total/N) каждому, остаток — первому гостю
 
 export class CostSplitter<T extends ICostCalculable> {
   private items: T[]
@@ -99,7 +87,6 @@ export class CostSplitter<T extends ICostCalculable> {
   split(guestCount: number): number[] {
     if (guestCount <= 0) return []
     const total = this.getTotalCost()
-    // Работаем в копейках чтобы не терять точность
     const totalKopecks = Math.round(total * 100)
     const perGuest = Math.floor(totalKopecks / guestCount)
     const remainder = totalKopecks - perGuest * guestCount

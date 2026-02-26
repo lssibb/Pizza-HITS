@@ -1,6 +1,5 @@
 import type { IEntity, ICostCalculable, IFilterable } from './interfaces'
 
-// ===== БАЗОВЫЙ КЛАСС =====
 export abstract class Entity implements IEntity {
   readonly id: string
 
@@ -9,7 +8,6 @@ export abstract class Entity implements IEntity {
   }
 }
 
-// ===== ИНГРЕДИЕНТ =====
 export class Ingredient extends Entity implements ICostCalculable, IFilterable {
   private _name: string
   private _cost: number
@@ -36,7 +34,6 @@ export class Ingredient extends Entity implements ICostCalculable, IFilterable {
   }
 }
 
-// ===== ОСНОВА ДЛЯ ПИЦЦЫ =====
 export const BaseType = {
   Classic: 'classic',
   Black: 'black',

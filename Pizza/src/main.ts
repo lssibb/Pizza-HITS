@@ -46,7 +46,6 @@ function openPage(page: string) {
   }
 }
 
-// ===== СТРАНИЦА ИНГРЕДИЕНТОВ =====
 function renderIngredients() {
   app.innerHTML = `
     <h2>Ингредиенты</h2>
@@ -100,7 +99,6 @@ function renderIngredients() {
   updateTable()
 }
 
-// ===== СТРАНИЦА ОСНОВ =====
 function renderBases() {
   app.innerHTML = `
     <h2>Основы</h2>
@@ -166,7 +164,6 @@ function renderBases() {
   updateTable()
 }
 
-// ===== СТРАНИЦА ПИЦЦ =====
 function renderPizzas() {
   app.innerHTML = `
     <h2>Пиццы</h2>
@@ -245,7 +242,6 @@ function renderPizzas() {
   updateTable()
 }
 
-// ===== СТРАНИЦА БОРТИКОВ =====
 function renderCrusts() {
   app.innerHTML = `
     <h2>Бортики</h2>
@@ -265,7 +261,6 @@ function renderCrusts() {
     </table>
   `
 
-  // Чекбоксы ингредиентов для бортика
   const ingContainer = document.getElementById('crust-ingredients')!
   for (const ing of ingredientService.getAll()) {
     const label = document.createElement('label')
@@ -273,7 +268,6 @@ function renderCrusts() {
     ingContainer.appendChild(label)
   }
 
-  // Чекбоксы пицц для whitelist/blacklist
   const pizzaContainer = document.getElementById('crust-pizzas')!
   for (const pizza of pizzaService.getAll()) {
     const label = document.createElement('label')
@@ -328,7 +322,6 @@ function renderCrusts() {
   updateTable()
 }
 
-// ===== СТРАНИЦА НОВОГО ЗАКАЗА =====
 function renderNewOrder() {
   app.innerHTML = `
     <h2>Новый заказ</h2>
@@ -386,7 +379,6 @@ function renderNewOrder() {
   const orderItems: OrderItem[] = []
   const itemsContainer = document.getElementById('order-items')!
 
-  // Заполняем селекты
   const pizzaSelect = document.getElementById('order-pizza') as HTMLSelectElement
   const halfASelect = document.getElementById('order-halfA') as HTMLSelectElement
   const halfBSelect = document.getElementById('order-halfB') as HTMLSelectElement
@@ -414,7 +406,6 @@ function renderNewOrder() {
     crustSelect.appendChild(opt)
   }
 
-  // Ингредиенты для кастомной пиццы
   const customIngs = document.getElementById('order-custom-ings')!
   for (const ing of ingredientService.getAll()) {
     const label = document.createElement('label')
@@ -422,7 +413,6 @@ function renderNewOrder() {
     customIngs.appendChild(label)
   }
 
-  // Покусочная пицца — хранилище кусков
   let currentSlices: PizzaSlice[] = []
   const sizeSelect = document.getElementById('order-size') as HTMLSelectElement
 
@@ -434,7 +424,6 @@ function renderNewOrder() {
     })
   }
 
-  // Переключение типа пиццы
   const typeSelect = document.getElementById('order-type') as HTMLSelectElement
   typeSelect.addEventListener('change', () => {
     document.getElementById('order-saved')!.style.display = typeSelect.value === 'saved' ? '' : 'none'
@@ -444,19 +433,16 @@ function renderNewOrder() {
     if (typeSelect.value === 'sliced') rebuildPizzaCircle()
   })
 
-  // При смене размера — перестроить круг если покусочная
   sizeSelect.addEventListener('change', () => {
     if (typeSelect.value === 'sliced') rebuildPizzaCircle()
   })
 
-  // Отложенный заказ
   const deferredCheck = document.getElementById('order-deferred') as HTMLInputElement
   const deferredTime = document.getElementById('order-deferred-time') as HTMLInputElement
   deferredCheck.addEventListener('change', () => {
     deferredTime.style.display = deferredCheck.checked ? '' : 'none'
   })
 
-  // Добавить пиццу в заказ
   document.getElementById('order-add-item')!.addEventListener('click', () => {
     const size = (document.getElementById('order-size') as HTMLSelectElement).value as PizzaSize
     const baseId = baseSelect.value
@@ -532,7 +518,6 @@ function renderNewOrder() {
   }
   updateItemsList()
 
-  // Оформить заказ
   document.getElementById('order-submit')!.addEventListener('click', () => {
     if (orderItems.length === 0) return alert('Добавьте хотя бы одну пиццу')
     const comment = (document.getElementById('order-comment') as HTMLInputElement).value
@@ -544,7 +529,6 @@ function renderNewOrder() {
   })
 }
 
-// ===== СТРАНИЦА ЗАКАЗОВ =====
 function renderOrders() {
   app.innerHTML = `
     <h2>Заказы</h2>
@@ -570,7 +554,6 @@ function renderOrders() {
       div.className = 'order-card'
       const itemsList = order.items.map(item => `${item.describe()} (${item.size}) — ${item.calculateCost()}₽`).join('<br/>')
 
-      // Разделение стоимости по гостям
       let guestSplitHtml = ''
       if (order.guestCount > 1) {
         const splitter = new CostSplitter(order.items)

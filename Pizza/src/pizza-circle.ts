@@ -19,7 +19,6 @@ export function createPizzaCircle(
   const wrapper = document.createElement('div')
   wrapper.className = 'pizza-circle-wrapper'
 
-  // SVG круг
   const svgNS = 'http://www.w3.org/2000/svg'
   const svgSize = 300
   const cx = svgSize / 2
@@ -31,11 +30,9 @@ export function createPizzaCircle(
   svg.setAttribute('height', String(svgSize))
   svg.setAttribute('viewBox', `0 0 ${svgSize} ${svgSize}`)
 
-  // Рисуем секторы
   function drawCircle() {
     svg.innerHTML = ''
 
-    // Фон круга
     const bgCircle = document.createElementNS(svgNS, 'circle')
     bgCircle.setAttribute('cx', String(cx))
     bgCircle.setAttribute('cy', String(cy))
@@ -58,7 +55,6 @@ export function createPizzaCircle(
 
       const largeArc = angleStep > Math.PI ? 1 : 0
 
-      // Сектор (кликабельная область)
       const path = document.createElementNS(svgNS, 'path')
       const d = `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
       path.setAttribute('d', d)
@@ -87,7 +83,6 @@ export function createPizzaCircle(
 
       svg.appendChild(path)
 
-      // Номер куска
       const midAngle = (startAngle + endAngle) / 2
       const labelR = radius * 0.6
       const lx = cx + labelR * Math.cos(midAngle)
@@ -107,11 +102,9 @@ export function createPizzaCircle(
 
   wrapper.appendChild(svg)
 
-  // Панель управления
   const controls = document.createElement('div')
   controls.className = 'pizza-circle-controls'
 
-  // Кнопки выбора
   const btnSelectAll = document.createElement('button')
   btnSelectAll.textContent = 'Выбрать все'
   btnSelectAll.addEventListener('click', () => {
@@ -131,7 +124,6 @@ export function createPizzaCircle(
   controls.appendChild(btnSelectAll)
   controls.appendChild(btnDeselectAll)
 
-  // Чекбоксы ингредиентов для назначения на выбранные куски
   const ingPanel = document.createElement('div')
   ingPanel.className = 'slice-ingredients'
   ingPanel.innerHTML = '<strong>Ингредиенты для выбранных кусков:</strong>'
@@ -165,7 +157,6 @@ export function createPizzaCircle(
   ingPanel.appendChild(btnApply)
   controls.appendChild(ingPanel)
 
-  // Информация о кусках
   const infoDiv = document.createElement('div')
   infoDiv.className = 'slice-info'
 

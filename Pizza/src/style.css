@@ -1,0 +1,242 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
+}
+
+header {
+  background: #d32f2f;
+  color: white;
+  padding: 16px 24px;
+}
+
+header h1 {
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+#tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+#tabs button {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+#tabs button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+#tabs button.active {
+  background: white;
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+#app {
+  max-width: 820px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+h2 {
+  margin-bottom: 16px;
+  color: #d32f2f;
+}
+
+h3 {
+  margin: 12px 0 8px;
+}
+
+.add-form {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+input, select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #d32f2f;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  background: #d32f2f;
+  color: white;
+  transition: background 0.2s;
+}
+
+button:hover {
+  background: #b71c1c;
+}
+
+.delete-btn {
+  background: #888;
+  font-size: 12px;
+  padding: 4px 12px;
+}
+
+.delete-btn:hover {
+  background: #d32f2f;
+}
+
+.remove-item {
+  background: none;
+  color: #d32f2f;
+  font-size: 16px;
+  padding: 2px 6px;
+}
+
+.remove-item:hover {
+  background: #fce4ec;
+  border-radius: 4px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+thead {
+  background: #fafafa;
+}
+
+th, td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+th {
+  font-weight: 600;
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#ing-search,
+#base-search,
+#pizza-search,
+#order-search {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.order-card {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.order-card h3 {
+  color: #d32f2f;
+  margin-bottom: 8px;
+}
+
+.order-card p {
+  margin: 4px 0;
+}
+
+.add-form label {
+  font-size: 14px;
+  display: inline-block;
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 16px 0;
+}
+
+.pizza-circle-wrapper {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.pizza-circle-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.pizza-circle-controls button {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.slice-ingredients {
+  margin-top: 8px;
+}
+
+.slice-ingredients label {
+  display: block;
+  font-size: 13px;
+  padding: 2px 0;
+}
+
+.slice-info {
+  margin-top: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.slice-info p {
+  font-size: 13px;
+  margin: 2px 0;
+  color: #555;
+}
+
+.order-section {
+  padding: 8px 0;
+}
+
+#order-comment {
+  width: 100%;
+}
