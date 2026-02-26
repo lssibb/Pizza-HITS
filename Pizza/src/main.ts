@@ -1,5 +1,6 @@
 import './style.css'
 import { IngredientService, PizzaBaseService, PizzaService, CrustService, OrderService } from './services'
+import { CostSplitter } from './repository'
 import { CrustListMode, SavedPizzaItem, CustomPizzaItem, CombinedPizzaItem, SlicedPizzaItem, PizzaSlice, PizzaSize } from './models'
 import type { OrderItem } from './models'
 import { createPizzaCircle } from './pizza-circle'
@@ -373,6 +374,9 @@ function renderNewOrder() {
     <hr />
     <input id="order-comment" placeholder="Комментарий к заказу" />
     <div>
+      <label>Количество гостей: <input id="order-guests" type="number" min="1" value="1" style="width:60px" /></label>
+    </div>
+    <div>
       <label><input type="checkbox" id="order-deferred" /> Отложенный заказ</label>
       <input type="datetime-local" id="order-deferred-time" style="display:none" />
     </div>
@@ -532,8 +536,9 @@ function renderNewOrder() {
   document.getElementById('order-submit')!.addEventListener('click', () => {
     if (orderItems.length === 0) return alert('Добавьте хотя бы одну пиццу')
     const comment = (document.getElementById('order-comment') as HTMLInputElement).value
+    const guestCount = Number((document.getElementById('order-guests') as HTMLInputElement).value) || 1
     const deferred = deferredCheck.checked ? new Date(deferredTime.value) : undefined
-    orderService.create([...orderItems], comment, deferred)
+    orderService.create([...orderItems], comment, guestCount, deferred)
     alert('Заказ оформлен!')
     openPage('orders')
   })
@@ -564,10 +569,21 @@ function renderOrders() {
       const div = document.createElement('div')
       div.className = 'order-card'
       const itemsList = order.items.map(item => `${item.describe()} (${item.size}) — ${item.calculateCost()}₽`).join('<br/>')
+
+      // Разделение стоимости по гостям
+      let guestSplitHtml = ''
+      if (order.guestCount > 1) {
+        const splitter = new CostSplitter(order.items)
+        const amounts = splitter.split(order.guestCount)
+        const lines = amounts.map((amount, i) => `Гость ${i + 1}: ${amount}₽`).join('<br/>')
+        guestSplitHtml = `<p><strong>Разделение на ${order.guestCount} гостей:</strong><br/>${lines}</p>`
+      }
+
       div.innerHTML = `
         <h3>Заказ #${order.number}</h3>
         <p>${itemsList}</p>
         <p><strong>Итого: ${order.totalCost}₽</strong></p>
+        ${guestSplitHtml}
         <p>Комментарий: ${order.comment || '—'}</p>
         <p>Время: ${order.orderTime.toLocaleString()}</p>
         ${order.deferredTime ? `<p>Отложен на: ${order.deferredTime.toLocaleString()}</p>` : ''}

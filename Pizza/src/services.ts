@@ -114,8 +114,8 @@ export class OrderService {
 
   getAll(): Order[] { return this.repo.getAll() }
 
-  create(items: OrderItem[], comment: string, deferredTime?: Date): Order {
-    const order = new Order(this.nextNumber++, items, comment, deferredTime)
+  create(items: OrderItem[], comment: string, guestCount: number, deferredTime?: Date): Order {
+    const order = new Order(this.nextNumber++, items, comment, guestCount, deferredTime)
     this.repo.add(order)
     return order
   }

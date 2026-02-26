@@ -327,12 +327,14 @@ export class Order extends Entity implements IFilterable {
   private _comment: string
   private _orderTime: Date
   private _deferredTime: Date | null
+  private _guestCount: number
 
-  constructor(number: number, items: OrderItem[], comment: string, deferredTime?: Date, id?: string) {
+  constructor(number: number, items: OrderItem[], comment: string, guestCount: number, deferredTime?: Date, id?: string) {
     super(id)
     this._number = number
     this._items = [...items]
     this._comment = comment
+    this._guestCount = guestCount
     this._orderTime = new Date()
     this._deferredTime = deferredTime ?? null
   }
@@ -340,6 +342,7 @@ export class Order extends Entity implements IFilterable {
   get number(): number { return this._number }
   get items(): OrderItem[] { return [...this._items] }
   get comment(): string { return this._comment }
+  get guestCount(): number { return this._guestCount }
   get orderTime(): Date { return this._orderTime }
   get deferredTime(): Date | null { return this._deferredTime }
 
